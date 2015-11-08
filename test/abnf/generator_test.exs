@@ -17,4 +17,13 @@ defmodule ABNF.GeneratorTest do
       {:lf, "\n", []},
     ]})
   end
+
+  test "generating a repeat" do
+    assert "1*23" = Generator.generate({:repeat, "1*23", [
+      {:digit, "1", []},
+      {:literal, "*", []},
+      {:digit, "2", []},
+      {:digit, "3", []}
+    ]})
+  end
 end

@@ -3,6 +3,10 @@ defmodule ABNF.Generator do
     preview
   end
 
+  def generate({:repeat, preview, _children}) do
+    preview
+  end
+
   def generate({_rule, preview, []}) do
     preview
   end
