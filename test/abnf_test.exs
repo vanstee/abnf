@@ -8,4 +8,9 @@ defmodule ABNFTest do
   test "parsing and generating a dquote" do
     assert "\"" = RFC5234.parse(:dquote, "\"") |> Generator.generate
   end
+
+  test "parsing and generating a bit" do
+    assert "0" = RFC5234.parse(:bit, "0") |> Generator.generate
+    assert "1" = RFC5234.parse(:bit, "1") |> Generator.generate
+  end
 end
