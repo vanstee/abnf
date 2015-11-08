@@ -10,4 +10,11 @@ defmodule ABNF.ParserTest do
     assert {:bit, "0", []} = RFC5234.parse(:bit, "0")
     assert {:bit, "1", []} = RFC5234.parse(:bit, "1")
   end
+
+  test "parsing a crlf" do
+    assert {:crlf, "\r\n", [
+      {:cr, "\r", []},
+      {:lf, "\n", []},
+    ]} = RFC5234.parse(:crlf, "\r\n")
+  end
 end

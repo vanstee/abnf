@@ -13,4 +13,8 @@ defmodule ABNFTest do
     assert "0" = RFC5234.parse(:bit, "0") |> Generator.generate
     assert "1" = RFC5234.parse(:bit, "1") |> Generator.generate
   end
+
+  test "parsing and generating a crlf" do
+    assert "\r\n" = RFC5234.parse(:crlf, "\r\n") |> Generator.generate
+  end
 end

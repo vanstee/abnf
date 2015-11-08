@@ -11,13 +11,13 @@ defmodule ABNF.RFC5234 do
     fn input ->
       alternate([
         fn
-          '0' ->
+          [?0|_] ->
             {:bit, "0", []}
           _ ->
             :error
         end,
         fn
-          '1' ->
+          [?1|_] ->
             {:bit, "1", []}
           _ ->
             :error
@@ -26,12 +26,70 @@ defmodule ABNF.RFC5234 do
     end
   end
 
+  def parse(:crlf) do
+    fn input ->
+      results = concatenate([
+        parse(:cr),
+        parse(:lf)
+      ]).(input)
+
+      preview = results
+      |> Enum.map(fn {_, preview, _} -> preview end)
+      |> Enum.join
+
+      {:crlf, preview, results}
+    end
+  end
+
+  def parse(:cr) do
+    fn
+      [?\r|_] ->
+        {:cr, "\r", []}
+      _ ->
+        :error
+    end
+  end
+
+  def parse(:lf) do
+    fn
+      [?\n|_] ->
+        {:lf, "\n", []}
+      _ ->
+        :error
+    end
+  end
+
   def parse(:dquote) do
     fn
-      '\"' ->
+      [?\"|_] ->
         {:dquote, "\"", []}
       _ ->
         :error
+    end
+  end
+
+  defp concatenate(elements) do
+    fn input ->
+      concatenate(elements, [], input)
+    end
+  end
+
+  defp concatenate([], acc, '') do
+    acc
+    |> List.flatten
+    |> Enum.reverse
+  end
+
+  defp concatenate([element|elements], acc, input) do
+    case element.(input) do
+      :error ->
+        :error
+      {_, preview, _} = result ->
+        input = to_string(input)
+        ["", input] = String.split(input, preview, parts: 2)
+        input = String.to_char_list(input)
+
+        concatenate(elements, [result|acc], input)
     end
   end
 
@@ -41,7 +99,7 @@ defmodule ABNF.RFC5234 do
     end
   end
 
-  defp alternate([], input) do
+  defp alternate([], _input) do
     :error
   end
 
