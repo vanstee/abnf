@@ -1,2 +1,2 @@
-defmodule Abnf do
+defmodule ABNF do
 end
