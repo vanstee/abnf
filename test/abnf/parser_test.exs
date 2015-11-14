@@ -26,4 +26,26 @@ defmodule ABNF.ParserTest do
       {:digit, "3", []}
     ]}] = RFC5234.parse(:repeat, "1*23")
   end
+
+  test "parsing a rulename" do
+    assert [{:rulename, "DQUOTE", [
+      {:alpha, "D", []},
+      {:alpha, "Q", []},
+      {:alpha, "U", []},
+      {:alpha, "O", []},
+      {:alpha, "T", []},
+      {:alpha, "E", []}
+    ]}] = RFC5234.parse(:rulename, "DQUOTE")
+  end
+
+  test "parsing a rulelist" do
+    assert [{:rulelist, _, [
+      {:rule, "DQUOTE = %x22\r\n", [
+        {:rulename, "DQUOTE", _},
+        {:"defined-as", " = ", _},
+        {:elements, _, [{:"num-val", "%x22", _}]},
+        {:"c-nl", "\r\n", _}
+      ]}
+    ]}] = RFC5234.parse(:rulelist, "DQUOTE = %x22\r\n")
+  end
 end

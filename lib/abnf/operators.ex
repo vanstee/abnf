@@ -37,7 +37,7 @@ defmodule ABNF.Operators do
     end
   end
 
-  defp concatenate([], acc, '') do
+  defp concatenate([], acc, _input) do
     acc
     |> List.flatten
     |> Enum.reverse
@@ -96,6 +96,20 @@ defmodule ABNF.Operators do
         children = Enum.reverse(children)
         repeat(min, max, element, count + 1, [children|acc], input)
     end
+  end
+
+  def range(min, max) do
+    fn input ->
+      range(min, max, input)
+    end
+  end
+
+  def range(min, max, [head|_]) when head >= min and head <= max do
+    [{:literal, to_string([head]), []}]
+  end
+
+  def range(_min, _max, _string) do
+    :error
   end
 
   def preview(children) do
