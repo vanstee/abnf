@@ -1,7 +1,11 @@
 defmodule ABNF.Generator do
   def generate({:rulelist, _preview, children}) do
+    rules = children
+    |> Enum.filter(&match?({:rule, _, _}, &1))
+    |> Enum.map(&generate/1)
+
     quote do
-      unquote_splicing(Enum.map(children, &generate/1))
+      unquote_splicing(rules)
     end
   end
 
@@ -26,7 +30,11 @@ defmodule ABNF.Generator do
   end
 
   def generate({:elements, _preview, children}) do
-    generate(children)
+    [alternation|_] = children
+
+    quote do
+      unquote(generate(alternation))
+    end
   end
 
   def generate({:alternation, _preview, [child]}) do
@@ -70,7 +78,7 @@ defmodule ABNF.Generator do
       [{:repeat, _, _}, element] ->
         # TODO: Use repeat min and max values
         quote do
-          repeat(0, :infinity, unquote_splicing(generate(element)))
+          repeat(0, :infinity, unquote(generate(element)))
         end
       [element] ->
         generate(element)
@@ -82,11 +90,21 @@ defmodule ABNF.Generator do
   end
 
   def generate({:group, _preview, children}) do
-    children = children
+    [alternation] = children
     |> Enum.filter(&(elem(&1, 0) == :alternation))
     |> Enum.map(&generate/1)
 
-    children
+    alternation
+  end
+
+  def generate({:option, _preview, children}) do
+    [alternation] = children
+    |> Enum.filter(&(elem(&1, 0) == :alternation))
+    |> Enum.map(&generate/1)
+
+    quote do
+      repeat(0, 1, unquote(alternation))
+    end
   end
 
   def generate({:"char-val", _preview, children}) do
@@ -112,14 +130,38 @@ defmodule ABNF.Generator do
   def generate({:"hex-val", _preview, children}) do
     [_|digits] = children
 
-    integer = digits
-    |> Enum.map(fn {_, preview, _} -> preview end)
-    |> Enum.join
-    |> String.to_integer(16)
+    cond do
+      Enum.any?(digits, &match?({:literal, "-", _}, &1)) ->
+        index = Enum.find_index(digits, &match?({:literal, "-", _}, &1))
+        {min, [_|max]} = Enum.split(digits, index)
 
-    quote do
-      [unquote(integer)]
+        min = min
+        |> Enum.map(fn {_, preview, _} -> preview end)
+        |> Enum.join
+        |> String.to_integer(16)
+
+        max = max
+        |> Enum.map(fn {_, preview, _} -> preview end)
+        |> Enum.join
+        |> String.to_integer(16)
+
+        quote do
+          range([unquote([min]), unquote([max])])
+        end
+      true ->
+        integer = digits
+        |> Enum.map(fn {_, preview, _} -> preview end)
+        |> Enum.join
+        |> String.to_integer(16)
+
+        quote do
+          [unquote(integer)]
+        end
     end
+  end
+
+  def generate({:"c-nl", _preview, _children}) do
+    nil
   end
 
   def generate({:"c-wsp", _preview, _children}) do

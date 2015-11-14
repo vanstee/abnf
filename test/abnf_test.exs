@@ -52,18 +52,7 @@ defmodule ABNFTest do
     assert expected_rulelist == actual_rulelist
   end
 
-  test "parsing and generating a comment" do
-    expected_rulelist = """
-    defrule(:comment) do
-      concatenate([literal(';'), repeat(0, :infinity, alternate([parse(:WSP), parse(:VCHAR)])), parse(:CRLF)])
-    end
-    """
-    |> String.rstrip
-
-    actual_rulelist = RFC5234.parse(:rulelist, ~s{comment = ";" *(WSP / VCHAR) CRLF\r\n})
-    |> Generator.generate
-    |> Macro.to_string
-
-    assert expected_rulelist == actual_rulelist
+  test "parsing and generating rfc5234" do
+    assert :ok = Macro.validate(ABNF.load!("priv/rfc5234.abnf"))
   end
 end
