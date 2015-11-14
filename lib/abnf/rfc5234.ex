@@ -132,7 +132,7 @@ defmodule ABNF.RFC5234 do
   defrule :repeat do
     alternate([
       concatenate([
-        repeat(1, :infinity, parse(:digit)),
+        repeat(0, :infinity, parse(:digit)),
         literal('*'),
         repeat(0, :infinity, parse(:digit))
       ]),

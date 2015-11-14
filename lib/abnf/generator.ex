@@ -1,22 +1,28 @@
 defmodule ABNF.Generator do
-  def generate({:rulelist, preview, children}) do
+  def generate({:rulelist, _preview, children}) do
     quote do
       unquote_splicing(Enum.map(children, &generate/1))
     end
   end
 
   def generate({:rule, _preview, children}) do
-    [rulename, _, elements, _] = children
+    [{:rulename, rulename, _}, _, elements, _] = children
+
+    rulename = String.to_atom(rulename)
 
     quote do
-      defrule unquote(generate(rulename)) do
+      defrule unquote(rulename) do
         unquote(generate(elements))
       end
     end
   end
 
   def generate({:rulename, preview, _children}) do
-    String.to_atom(preview)
+    rulename = String.to_atom(preview)
+
+    quote do
+      parse(unquote(rulename))
+    end
   end
 
   def generate({:elements, _preview, children}) do
@@ -48,20 +54,39 @@ defmodule ABNF.Generator do
   end
 
   def generate({:concatenation, _preview, children}) do
+    children = children
+    |> Enum.filter(&(elem(&1, 0) == :repetition))
+    |> Enum.map(&generate/1)
+
     quote do
       concatenate([
-        unquote_splicing(Enum.map(children, &generate/1))
+        unquote_splicing(children)
       ])
     end
   end
 
-  # TODO: Use repeat
   def generate({:repetition, _preview, children}) do
-    generate(children)
+    case children do
+      [{:repeat, _, _}, element] ->
+        # TODO: Use repeat min and max values
+        quote do
+          repeat(0, :infinity, unquote_splicing(generate(element)))
+        end
+      [element] ->
+        generate(element)
+    end
   end
 
   def generate({:element, _preview, children}) do
     generate(children)
+  end
+
+  def generate({:group, _preview, children}) do
+    children = children
+    |> Enum.filter(&(elem(&1, 0) == :alternation))
+    |> Enum.map(&generate/1)
+
+    children
   end
 
   def generate({:"char-val", _preview, children}) do
@@ -97,7 +122,7 @@ defmodule ABNF.Generator do
     end
   end
 
-  def generate({:"c-wsp", preview, _children}) do
+  def generate({:"c-wsp", _preview, _children}) do
     nil
   end
 
