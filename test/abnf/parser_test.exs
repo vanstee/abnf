@@ -43,7 +43,17 @@ defmodule ABNF.ParserTest do
       {:rule, "DQUOTE = %x22\r\n", [
         {:rulename, "DQUOTE", _},
         {:"defined-as", " = ", _},
-        {:elements, _, [{:"num-val", "%x22", _}]},
+        {:elements, _, [
+          {:alternation, _, [
+            {:concatenation, _, [
+              {:repetition, _, [
+                {:element, _, [
+                  {:"num-val", "%x22", _},
+                ]},
+              ]},
+            ]},
+          ]},
+        ]},
         {:"c-nl", "\r\n", _}
       ]}
     ]}] = RFC5234.parse(:rulelist, "DQUOTE = %x22\r\n")

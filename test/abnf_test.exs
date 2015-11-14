@@ -22,7 +22,7 @@ defmodule ABNFTest do
     assert "1*23" = RFC5234.parse(:repeat, "1*23") |> Generator.generate
   end
 
-  test "parsing and generating a rulelist" do
+  test "parsing and generating a dquote rule" do
     expected_rulelist = """
     defrule(:DQUOTE) do
       literal('"')
@@ -31,6 +31,21 @@ defmodule ABNFTest do
     |> String.rstrip
 
     actual_rulelist = RFC5234.parse(:rulelist, "DQUOTE = %x22\r\n")
+    |> Generator.generate
+    |> Macro.to_string
+
+    assert expected_rulelist == actual_rulelist
+  end
+
+  test "parsing and generating a bit rule" do
+    expected_rulelist = """
+    defrule(:BIT) do
+      alternate([literal('0'), literal('1')])
+    end
+    """
+    |> String.rstrip
+
+    actual_rulelist = RFC5234.parse(:rulelist, ~s(BIT = "0" / "1"\r\n))
     |> Generator.generate
     |> Macro.to_string
 

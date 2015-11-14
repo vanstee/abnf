@@ -59,13 +59,9 @@ defmodule ABNF.RFC5234 do
   end
 
   defrule :elements do
-    alternate([
-      parse(:rulename),
-      parse(:group),
-      parse(:option),
-      parse(:"char-val"),
-      parse(:"num-val"),
-      parse(:"prose-val")
+    concatenate([
+      parse(:alternation),
+      repeat(0, :infinity, parse(:"c-wsp"))
     ])
   end
 
@@ -113,6 +109,25 @@ defmodule ABNF.RFC5234 do
     ])
   end
 
+  defrule :concatenation do
+    concatenate([
+      parse(:repetition),
+      repeat(0, :infinity,
+        concatenate([
+          repeat(1, :infinity, parse(:"c-wsp")),
+          parse(:repetition)
+        ])
+      )
+    ])
+  end
+
+  defrule :repetition do
+    concatenate([
+      repeat(0, 1, parse(:repeat)),
+      parse(:element)
+    ])
+  end
+
   # NOTE: alternating in reverse order
   defrule :repeat do
     alternate([
@@ -122,6 +137,17 @@ defmodule ABNF.RFC5234 do
         repeat(0, :infinity, parse(:digit))
       ]),
       repeat(1, :infinity, parse(:digit))
+    ])
+  end
+
+  defrule :element do
+    alternate([
+      parse(:rulename),
+      parse(:group),
+      parse(:option),
+      parse(:"char-val"),
+      parse(:"num-val"),
+      parse(:"prose-val")
     ])
   end
 
