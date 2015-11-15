@@ -26,9 +26,7 @@ defmodule ABNF.Generator do
     |> Enum.filter(&match?({:rule, _, _}, &1))
     |> Enum.map(&generate/1)
 
-    quote do
-      unquote_splicing(rules)
-    end
+    rules
   end
 
   def generate({:rule, _preview, children}) do
@@ -216,7 +214,7 @@ defmodule ABNF.Generator do
     nil
   end
 
-  def generate({:crlf, preview, _children}) do
+  def generate({:CRLF, preview, _children}) do
     preview
   end
 

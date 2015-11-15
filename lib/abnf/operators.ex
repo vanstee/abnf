@@ -16,6 +16,15 @@ defmodule ABNF.Operators do
     end
   end
 
+  # TODO: Support multiple chars instead of using this special case
+  def literal('=/') do
+    fn [?=, ?/|_] ->
+      [{:literal, "/=", []}]
+      _ ->
+        :error
+    end
+  end
+
   def literal(element) do
     fn input ->
       literal(element, input)
@@ -56,20 +65,24 @@ defmodule ABNF.Operators do
 
   def alternate(elements) do
     fn input ->
-      alternate(elements, input)
+      alternate(elements, [], input)
     end
   end
 
-  defp alternate([], _input) do
+  defp alternate([], [], _input) do
     :error
   end
 
-  defp alternate([element|elements], input) do
+  defp alternate([], acc, _input) do
+    Enum.max_by(acc, &length/1)
+  end
+
+  defp alternate([element|elements], acc, input) do
     case element.(input) do
       :error ->
-        alternate(elements, input)
+        alternate(elements, acc, input)
       child ->
-        child
+        alternate(elements, [child|acc], input)
     end
   end
 

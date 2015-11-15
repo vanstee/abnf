@@ -1,341 +1,120 @@
-defmodule ABNF.RFC5234 do
-  import ABNF.Operators
-
-  def parse(rule, input) when is_binary(input) do
+defmodule(ABNF.RFC5234) do
+  import(ABNF.Operators, warn: false)
+  def(parse(rule, input) when is_binary(input)) do
     parse(rule, String.to_char_list(input))
   end
-
-  def parse(rule, input) do
+  def(parse(rule, input)) do
     parse(rule).(input)
   end
-
-  defrule :rulelist do
-    repeat(1, :infinity,
-      alternate([
-        parse(:rule),
-        concatenate([
-          repeat(0, :infinity, parse(:"c-wsp")),
-          parse(:"c-nl")
-        ])
-      ])
-    )
+  defrule(:ALPHA) do
+    alternate([range(65, 90), range(97, 122)])
   end
-
-  defrule :rule do
-    concatenate([
-      parse(:rulename),
-      parse(:"defined-as"),
-      parse(:elements),
-      parse(:"c-nl")
-    ])
+  defrule(:BIT) do
+    alternate([literal('0'), literal('1')])
   end
-
-  defrule :rulename do
-    concatenate([
-      parse(:alpha),
-      repeat(0, :infinity,
-        alternate([
-          parse(:alpha),
-          parse(:digit),
-          literal('-')
-        ])
-      )
-    ])
+  defrule(:CHAR) do
+    range(1, 127)
   end
-
-  defrule :"defined-as" do
-    concatenate([
-      repeat(0, :infinity,
-        parse(:"c-wsp")
-      ),
-      alternate([
-        literal('='),
-        literal('=/')
-      ]),
-      repeat(0, :infinity,
-        parse(:"c-wsp")
-      )
-    ])
-  end
-
-  defrule :elements do
-    concatenate([
-      parse(:alternation),
-      repeat(0, :infinity, parse(:"c-wsp"))
-    ])
-  end
-
-  defrule :"c-wsp" do
-    alternate([
-      parse(:wsp),
-      concatenate([
-        parse(:"c-nl"),
-        parse(:wsp)
-      ])
-    ])
-  end
-
-  defrule :"c-nl" do
-    alternate([
-      parse(:comment),
-      parse(:crlf)
-    ])
-  end
-
-  defrule :comment do
-    concatenate([
-      literal(';'),
-      repeat(0, :infinity,
-        alternate([
-          parse(:wsp),
-          parse(:vchar)
-        ])
-      ),
-      parse(:crlf)
-    ])
-  end
-
-  defrule :alternation do
-    concatenate([
-      parse(:concatenation),
-      repeat(0, :infinity,
-        concatenate([
-          repeat(0, :infinity, parse(:"c-wsp")),
-          literal('/'),
-          repeat(0, :infinity, parse(:"c-wsp")),
-          parse(:concatenation)
-        ])
-      )
-    ])
-  end
-
-  defrule :concatenation do
-    concatenate([
-      parse(:repetition),
-      repeat(0, :infinity,
-        concatenate([
-          repeat(1, :infinity, parse(:"c-wsp")),
-          parse(:repetition)
-        ])
-      )
-    ])
-  end
-
-  defrule :repetition do
-    concatenate([
-      repeat(0, 1, parse(:repeat)),
-      parse(:element)
-    ])
-  end
-
-  # NOTE: alternating in reverse order
-  defrule :repeat do
-    alternate([
-      concatenate([
-        repeat(0, :infinity, parse(:digit)),
-        literal('*'),
-        repeat(0, :infinity, parse(:digit))
-      ]),
-      repeat(1, :infinity, parse(:digit))
-    ])
-  end
-
-  defrule :element do
-    alternate([
-      parse(:rulename),
-      parse(:group),
-      parse(:option),
-      parse(:"char-val"),
-      parse(:"num-val"),
-      parse(:"prose-val")
-    ])
-  end
-
-  defrule :group do
-    concatenate([
-      literal('('),
-      repeat(0, :infinity, parse(:"c-wsp")),
-      parse(:alternation),
-      repeat(0, :infinity, parse(:"c-wsp")),
-      literal(')')
-    ])
-  end
-
-  defrule :option do
-    concatenate([
-      literal('['),
-      repeat(0, :infinity, parse(:"c-wsp")),
-      parse(:alternation),
-      repeat(0, :infinity, parse(:"c-wsp")),
-      literal(']')
-    ])
-  end
-
-  defrule :"char-val" do
-    concatenate([
-      parse(:dquote),
-      repeat(0, :infinity, 
-        alternate([
-          range(0x20, 0x21),
-          range(0x23, 0x7E)
-        ])
-      ),
-      parse(:dquote)
-    ])
-  end
-
-  defrule :"num-val" do
-    concatenate([
-      literal('%'),
-      alternate([
-        parse(:"bin-val"),
-        parse(:"dec-val"),
-        parse(:"hex-val")
-      ])
-    ])
-  end
-
-  defrule :"bin-val" do
-    concatenate([
-      literal('b'),
-      repeat(1, :infinity, parse(:bit)),
-      repeat(0, 1,
-        alternate([
-          repeat(1, :infinity,
-            concatenate([
-              literal('.'),
-              repeat(1, :infinity, parse(:bit))
-            ])
-          ),
-          concatenate([
-            literal('-'),
-            repeat(1, :infinity, parse(:bit))
-          ])
-        ])
-      )
-    ])
-  end
-
-  defrule :"dec-val" do
-    concatenate([
-      literal('d'),
-      repeat(1, :infinity, parse(:digit)),
-      repeat(0, 1,
-        alternate([
-          repeat(1, :infinity,
-            concatenate([
-              literal('.'),
-              repeat(1, :infinity, parse(:digit))
-            ])
-          ),
-          concatenate([
-            literal('-'),
-            repeat(1, :infinity, parse(:digit))
-          ])
-        ])
-      )
-    ])
-  end
-
-  defrule :"hex-val" do
-    concatenate([
-      literal('x'),
-      repeat(1, :infinity, parse(:hexdig)),
-      repeat(0, 1,
-        alternate([
-          repeat(1, :infinity,
-            concatenate([
-              literal('.'),
-              repeat(1, :infinity, parse(:hexdig))
-            ])
-          ),
-          concatenate([
-            literal('-'),
-            repeat(1, :infinity, parse(:hexdig))
-          ])
-        ])
-      )
-    ])
-  end
-
-  defrule :"prose-val" do
-    concatenate([
-      literal('<'),
-      repeat(0, :infinity,
-        alternate([
-          range(0x20, 0x3D),
-          range(0x3F, 0x7E)
-        ])
-      ),
-      literal('>')
-    ])
-  end
-
-  defrule :alpha do
-    alternate([
-      range(0x41, 0x5A),
-      range(0x61, 0x7A)
-    ])
-  end
-
-  defrule :bit do
-    alternate([
-      literal('0'),
-      literal('1')
-    ])
-  end
-
-  defrule :crlf do
-    concatenate([
-      parse(:cr),
-      parse(:lf)
-    ])
-  end
-
-  defrule :cr do
+  defrule(:CR) do
     literal('\r')
   end
-
-  defrule :digit do
-    range(0x30, 0x39)
+  defrule(:CRLF) do
+    concatenate([parse(:CR), parse(:LF)])
   end
-
-  defrule :dquote do
+  defrule(:CTL) do
+    alternate([range(0, 31), literal([127])])
+  end
+  defrule(:DIGIT) do
+    range(48, 57)
+  end
+  defrule(:DQUOTE) do
     literal('"')
   end
-
-  defrule :hexdig do
-    alternate([
-      parse(:digit),
-      literal('A'),
-      literal('B'),
-      literal('C'),
-      literal('D'),
-      literal('E'),
-      literal('F')
-    ])
+  defrule(:HEXDIG) do
+    alternate([parse(:DIGIT), literal('A'), literal('B'), literal('C'), literal('D'), literal('E'), literal('F')])
   end
-
-  defrule :htab do
+  defrule(:HTAB) do
     literal('\t')
   end
-
-  defrule :lf do
+  defrule(:LF) do
     literal('\n')
   end
-
-  defrule :sp do
+  defrule(:LWSP) do
+    repeat(0, :infinity, alternate([parse(:WSP), concatenate([parse(:CRLF), parse(:WSP)])]))
+  end
+  defrule(:OCTET) do
+    range(0, 255)
+  end
+  defrule(:SP) do
     literal(' ')
   end
-
-  defrule :vchar do
-    range(0x21, 0x7E)
+  defrule(:VCHAR) do
+    range(33, 126)
   end
-
-  defrule :wsp do
-    alternate([
-      parse(:sp),
-      parse(:htab)
-    ])
+  defrule(:WSP) do
+    alternate([parse(:SP), parse(:HTAB)])
+  end
+  defrule(:rulelist) do
+    repeat(1, :infinity, alternate([parse(:rule), concatenate([repeat(0, :infinity, parse(:"c-wsp")), parse(:"c-nl")])]))
+  end
+  defrule(:rule) do
+    concatenate([parse(:rulename), parse(:"defined-as"), parse(:elements), parse(:"c-nl")])
+  end
+  defrule(:rulename) do
+    concatenate([parse(:ALPHA), repeat(0, :infinity, alternate([parse(:ALPHA), parse(:DIGIT), literal('-')]))])
+  end
+  defrule(:"defined-as") do
+    concatenate([repeat(0, :infinity, parse(:"c-wsp")), alternate([literal('='), literal('=/')]), repeat(0, :infinity, parse(:"c-wsp"))])
+  end
+  defrule(:elements) do
+    concatenate([parse(:alternation), repeat(0, :infinity, parse(:"c-wsp"))])
+  end
+  defrule(:"c-wsp") do
+    alternate([parse(:WSP), concatenate([parse(:"c-nl"), parse(:WSP)])])
+  end
+  defrule(:"c-nl") do
+    alternate([parse(:comment), parse(:CRLF)])
+  end
+  defrule(:comment) do
+    concatenate([literal(';'), repeat(0, :infinity, alternate([parse(:WSP), parse(:VCHAR)])), parse(:CRLF)])
+  end
+  defrule(:alternation) do
+    concatenate([parse(:concatenation), repeat(0, :infinity, concatenate([repeat(0, :infinity, parse(:"c-wsp")), literal('/'), repeat(0, :infinity, parse(:"c-wsp")), parse(:concatenation)]))])
+  end
+  defrule(:concatenation) do
+    concatenate([parse(:repetition), repeat(0, :infinity, concatenate([repeat(1, :infinity, parse(:"c-wsp")), parse(:repetition)]))])
+  end
+  defrule(:repetition) do
+    concatenate([repeat(0, 1, parse(:repeat)), parse(:element)])
+  end
+  defrule(:repeat) do
+    alternate([repeat(1, :infinity, parse(:DIGIT)), concatenate([repeat(0, :infinity, parse(:DIGIT)), literal('*'), repeat(0, :infinity, parse(:DIGIT))])])
+  end
+  defrule(:element) do
+    alternate([parse(:rulename), parse(:group), parse(:option), parse(:"char-val"), parse(:"num-val"), parse(:"prose-val")])
+  end
+  defrule(:group) do
+    concatenate([literal('('), repeat(0, :infinity, parse(:"c-wsp")), parse(:alternation), repeat(0, :infinity, parse(:"c-wsp")), literal(')')])
+  end
+  defrule(:option) do
+    concatenate([literal('['), repeat(0, :infinity, parse(:"c-wsp")), parse(:alternation), repeat(0, :infinity, parse(:"c-wsp")), literal(']')])
+  end
+  defrule(:"char-val") do
+    concatenate([parse(:DQUOTE), repeat(0, :infinity, alternate([range(32, 33), range(35, 126)])), parse(:DQUOTE)])
+  end
+  defrule(:"num-val") do
+    concatenate([literal('%'), alternate([parse(:"bin-val"), parse(:"dec-val"), parse(:"hex-val")])])
+  end
+  defrule(:"bin-val") do
+    concatenate([literal('b'), repeat(1, :infinity, parse(:BIT)), repeat(0, 1, alternate([repeat(1, :infinity, concatenate([literal('.'), repeat(1, :infinity, parse(:BIT))])), concatenate([literal('-'), repeat(1, :infinity, parse(:BIT))])]))])
+  end
+  defrule(:"dec-val") do
+    concatenate([literal('d'), repeat(1, :infinity, parse(:DIGIT)), repeat(0, 1, alternate([repeat(1, :infinity, concatenate([literal('.'), repeat(1, :infinity, parse(:DIGIT))])), concatenate([literal('-'), repeat(1, :infinity, parse(:DIGIT))])]))])
+  end
+  defrule(:"hex-val") do
+    concatenate([literal('x'), repeat(1, :infinity, parse(:HEXDIG)), repeat(0, 1, alternate([repeat(1, :infinity, concatenate([literal('.'), repeat(1, :infinity, parse(:HEXDIG))])), concatenate([literal('-'), repeat(1, :infinity, parse(:HEXDIG))])]))])
+  end
+  defrule(:"prose-val") do
+    concatenate([literal('<'), repeat(0, :infinity, alternate([range(32, 61), range(63, 126)])), literal('>')])
   end
 end

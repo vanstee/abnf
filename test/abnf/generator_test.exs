@@ -3,27 +3,27 @@ defmodule ABNF.GeneratorTest do
   alias ABNF.Generator
 
   test "generating a dquote" do
-    assert "\"" = Generator.generate({:dquote, "\"", []})
+    assert "\"" = Generator.generate({:DQUOTE, "\"", []})
   end
 
   test "generating a bit" do
-    assert "0" = Generator.generate({:bit, "0", []})
-    assert "1" = Generator.generate({:bit, "1", []})
+    assert "0" = Generator.generate({:BIT, "0", []})
+    assert "1" = Generator.generate({:BIT, "1", []})
   end
 
   test "generating a crlf" do
-    assert "\r\n" = Generator.generate({:crlf, "\r\n", [
-      {:cr, "\r", []},
-      {:lf, "\n", []},
+    assert "\r\n" = Generator.generate({:CRLF, "\r\n", [
+      {:CR, "\r", []},
+      {:LF, "\n", []},
     ]})
   end
 
   test "generating a repeat" do
     assert "1*23" = Generator.generate({:repeat, "1*23", [
-      {:digit, "1", []},
+      {:DIGIT, "1", []},
       {:literal, "*", []},
-      {:digit, "2", []},
-      {:digit, "3", []}
+      {:DIGIT, "2", []},
+      {:DIGIT, "3", []}
     ]})
   end
 
@@ -34,44 +34,42 @@ defmodule ABNF.GeneratorTest do
     end
     """ |> String.rstrip
 
-    generated_rulelist = Generator.generate({:rulelist, "DQUOTE = %x22\r\n", [
-      {:rule, "DQUOTE = %x22\r\n", [
-        {:rulename, "DQUOTE", [
-          {:alpha, "D", []},
-          {:alpha, "Q", []},
-          {:alpha, "U", []},
-          {:alpha, "O", []},
-          {:alpha, "T", []},
-          {:alpha, "E", []}
-        ]},
-        {:"defined-as", " = ", [
-          {:"c-wsp", " ", [
-            {:wsp, " ", [
-              {:sp, " ", []}
-            ]}
-          ]},
-          {:literal, "=", []},
-          {:"c-wsp", " ", [
-            {:wsp, " ", [
-              {:sp, " ", []}
-            ]}
+    generated_rulelist = Generator.generate({:rule, "DQUOTE = %x22\r\n", [
+      {:rulename, "DQUOTE", [
+        {:ALPHA, "D", []},
+        {:ALPHA, "Q", []},
+        {:ALPHA, "U", []},
+        {:ALPHA, "O", []},
+        {:ALPHA, "T", []},
+        {:ALPHA, "E", []}
+      ]},
+      {:"defined-as", " = ", [
+        {:"c-wsp", " ", [
+          {:WSP, " ", [
+            {:SP, " ", []}
           ]}
         ]},
-        {:elements, "%x22", [
-          {:"num-val", "%x22", [
-            {:literal, "%", []},
-            {:"hex-val", "x22", [
-              {:literal, "x", []},
-              {:hexdig, "2", [{:digit, "2", []}]},
-              {:hexdig, "2", [{:digit, "2", []}]}
-            ]}
+        {:literal, "=", []},
+        {:"c-wsp", " ", [
+          {:WSP, " ", [
+            {:SP, " ", []}
           ]}
-        ]},
-        {:"c-nl", "\r\n", [
-          {:crlf, "\r\n", [
-            {:cr, "\r", []},
-            {:lf, "\n", []}
+        ]}
+      ]},
+      {:elements, "%x22", [
+        {:"num-val", "%x22", [
+          {:literal, "%", []},
+          {:"hex-val", "x22", [
+            {:literal, "x", []},
+            {:HEXDIG, "2", [{:digit, "2", []}]},
+            {:HEXDIG, "2", [{:digit, "2", []}]}
           ]}
+        ]}
+      ]},
+      {:"c-nl", "\r\n", [
+        {:CRLF, "\r\n", [
+          {:CR, "\r", []},
+          {:LF, "\n", []}
         ]}
       ]}
     ]}) |> Macro.to_string
