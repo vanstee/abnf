@@ -1,21 +1,21 @@
-defmodule ABNF.ParserTest do
+defmodule Abnf.ParserTest do
   use ExUnit.Case
-  alias ABNF.RFC5234
+  alias Abnf.Rfc5234
 
   test "parsing a dquote" do
-    assert [{:DQUOTE, "\"", []}] = RFC5234.parse(:DQUOTE, "\"")
+    assert [{:DQUOTE, "\"", []}] = Rfc5234.parse(:DQUOTE, "\"")
   end
 
   test "parsing a bit" do
-    assert [{:BIT, "0", []}] = RFC5234.parse(:BIT, "0")
-    assert [{:BIT, "1", []}] = RFC5234.parse(:BIT, "1")
+    assert [{:BIT, "0", []}] = Rfc5234.parse(:BIT, "0")
+    assert [{:BIT, "1", []}] = Rfc5234.parse(:BIT, "1")
   end
 
   test "parsing a crlf" do
     assert [{:CRLF, "\r\n", [
       {:CR, "\r", []},
       {:LF, "\n", []},
-    ]}] = RFC5234.parse(:CRLF, "\r\n")
+    ]}] = Rfc5234.parse(:CRLF, "\r\n")
   end
 
   test "parsing a repeat" do
@@ -24,7 +24,7 @@ defmodule ABNF.ParserTest do
       {:literal, "*", []},
       {:DIGIT, "2", []},
       {:DIGIT, "3", []}
-    ]}] = RFC5234.parse(:repeat, "1*23")
+    ]}] = Rfc5234.parse(:repeat, "1*23")
   end
 
   test "parsing a rulename" do
@@ -35,7 +35,7 @@ defmodule ABNF.ParserTest do
       {:ALPHA, "O", []},
       {:ALPHA, "T", []},
       {:ALPHA, "E", []}
-    ]}] = RFC5234.parse(:rulename, "DQUOTE")
+    ]}] = Rfc5234.parse(:rulename, "DQUOTE")
   end
 
   test "parsing a rulelist" do
@@ -56,6 +56,6 @@ defmodule ABNF.ParserTest do
         ]},
         {:"c-nl", "\r\n", _}
       ]}
-    ]}] = RFC5234.parse(:rulelist, "DQUOTE = %x22\r\n")
+    ]}] = Rfc5234.parse(:rulelist, "DQUOTE = %x22\r\n")
   end
 end

@@ -1,6 +1,6 @@
-defmodule ABNF do
-  alias ABNF.Generator
-  alias ABNF.Parser
+defmodule Abnf do
+  alias Abnf.Generator
+  alias Abnf.Parser
 
   def load!(path) do
     module = path

@@ -1,11 +1,11 @@
-defmodule ABNF.Generator do
+defmodule Abnf.Generator do
   def generate([{:rulelist, _, _} = rulelist], module) do
     contents = generate(rulelist)
 
     defmodule module do
       # Import is lexical and eval is not, so the compiler can't see that we're
       # using macros and functions from the imported module below.
-      import ABNF.Operators, warn: false
+      import Abnf.Operators, warn: false
 
       def parse(rule, input) when is_binary(input) do
         parse(rule, String.to_char_list(input))

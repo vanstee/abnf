@@ -1,25 +1,29 @@
-defmodule ABNFTest do
+defmodule AbnfTest do
   use ExUnit.Case
-  alias ABNF.RFC5234
-  alias ABNF.Generator
+  alias Abnf.Rfc5234
+  alias Abnf.Generator
 
-  doctest ABNF
+  doctest Abnf
+
+  test "finding a module name from a path" do
+    assert Rfc2822 = Abnf.module_name("priv/rfc2822.abnf")
+  end
 
   test "parsing and generating a dquote" do
-    assert "\"" = RFC5234.parse(:DQUOTE, "\"") |> Generator.generate
+    assert "\"" = Rfc5234.parse(:DQUOTE, "\"") |> Generator.generate
   end
 
   test "parsing and generating a bit" do
-    assert "0" = RFC5234.parse(:BIT, "0") |> Generator.generate
-    assert "1" = RFC5234.parse(:BIT, "1") |> Generator.generate
+    assert "0" = Rfc5234.parse(:BIT, "0") |> Generator.generate
+    assert "1" = Rfc5234.parse(:BIT, "1") |> Generator.generate
   end
 
   test "parsing and generating a crlf" do
-    assert "\r\n" = RFC5234.parse(:CRLF, "\r\n") |> Generator.generate
+    assert "\r\n" = Rfc5234.parse(:CRLF, "\r\n") |> Generator.generate
   end
 
   test "parsing and generating a repeat" do
-    assert "1*23" = RFC5234.parse(:repeat, "1*23") |> Generator.generate
+    assert "1*23" = Rfc5234.parse(:repeat, "1*23") |> Generator.generate
   end
 
   test "parsing and generating a dquote rule" do
@@ -30,7 +34,7 @@ defmodule ABNFTest do
     """
     |> String.rstrip
 
-    actual_rulelist = RFC5234.parse(:rule, "DQUOTE = %x22\r\n")
+    actual_rulelist = Rfc5234.parse(:rule, "DQUOTE = %x22\r\n")
     |> Generator.generate
     |> Macro.to_string
 
@@ -45,7 +49,7 @@ defmodule ABNFTest do
     """
     |> String.rstrip
 
-    actual_rulelist = RFC5234.parse(:rule, ~s(BIT = "0" / "1"\r\n))
+    actual_rulelist = Rfc5234.parse(:rule, ~s(BIT = "0" / "1"\r\n))
     |> Generator.generate
     |> Macro.to_string
 
@@ -53,7 +57,7 @@ defmodule ABNFTest do
   end
 
   test "parsing and generating rfc5234" do
-    module = ABNF.load!("priv/rfc5234.abnf")
+    module = Abnf.load!("priv/rfc5234.abnf")
 
     expected_rulelist = """
     defrule(:DQUOTE) do

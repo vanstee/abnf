@@ -1,4 +1,4 @@
-defmodule ABNF.Operators do
+defmodule Abnf.Operators do
   defmacro defrule(name, do: block) do
     quote do
       def parse(unquote(name)) do

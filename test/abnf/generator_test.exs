@@ -1,6 +1,6 @@
-defmodule ABNF.GeneratorTest do
+defmodule Abnf.GeneratorTest do
   use ExUnit.Case
-  alias ABNF.Generator
+  alias Abnf.Generator
 
   test "generating a dquote" do
     assert "\"" = Generator.generate({:DQUOTE, "\"", []})
