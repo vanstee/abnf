@@ -1,24 +1,33 @@
 defmodule Abnf.Generator do
   def generate([{:rulelist, _, _} = rulelist], module) do
-    contents = generate(rulelist)
-
-    defmodule module do
-      # Import is lexical and eval is not, so the compiler can't see that we're
-      # using macros and functions from the imported module below.
-      import Abnf.Operators, warn: false
-
-      def parse(rule, input) when is_binary(input) do
-        parse(rule, String.to_char_list(input))
-      end
-
-      def parse(rule, input) do
-        parse(rule).(input)
-      end
-
-      Module.eval_quoted(__MODULE__, contents, [], __ENV__)
+    forward_to_core = case module do
+      Abnf.Core ->
+        quote do: nil
+      _ ->
+        quote do
+          def parse(rule) do
+            Abnf.Core.parse(rule)
+          end
+        end
     end
 
-    module
+    quote do
+      defmodule unquote(module) do
+        import Abnf.Operators, warn: false
+
+        def parse(rule, input) when is_binary(input) do
+          parse(rule, String.to_char_list(input))
+        end
+
+        def parse(rule, input) do
+          parse(rule).(input)
+        end
+
+        unquote_splicing(generate(rulelist))
+
+        unquote(forward_to_core)
+      end
+    end
   end
 
   def generate({:rulelist, _preview, children}) do
@@ -190,6 +199,39 @@ defmodule Abnf.Generator do
         |> Enum.map(fn {_, preview, _} -> preview end)
         |> Enum.join
         |> String.to_integer(16)
+
+        quote do
+          range(unquote(min), unquote(max))
+        end
+      true ->
+        integer = digits
+        |> Enum.map(fn {_, preview, _} -> preview end)
+        |> Enum.join
+        |> String.to_integer(16)
+
+        quote do
+          literal([unquote(integer)])
+        end
+    end
+  end
+
+  def generate({:"dec-val", _preview, children}) do
+    [_|digits] = children
+
+    cond do
+      Enum.any?(digits, &match?({:literal, "-", _}, &1)) ->
+        index = Enum.find_index(digits, &match?({:literal, "-", _}, &1))
+        {min, [_|max]} = Enum.split(digits, index)
+
+        min = min
+        |> Enum.map(fn {_, preview, _} -> preview end)
+        |> Enum.join
+        |> String.to_integer
+
+        max = max
+        |> Enum.map(fn {_, preview, _} -> preview end)
+        |> Enum.join
+        |> String.to_integer
 
         quote do
           range(unquote(min), unquote(max))

@@ -6,54 +6,6 @@ defmodule(Abnf.Rfc5234) do
   def(parse(rule, input)) do
     parse(rule).(input)
   end
-  defrule(:ALPHA) do
-    alternate([range(65, 90), range(97, 122)])
-  end
-  defrule(:BIT) do
-    alternate([literal('0'), literal('1')])
-  end
-  defrule(:CHAR) do
-    range(1, 127)
-  end
-  defrule(:CR) do
-    literal('\r')
-  end
-  defrule(:CRLF) do
-    concatenate([parse(:CR), parse(:LF)])
-  end
-  defrule(:CTL) do
-    alternate([range(0, 31), literal([127])])
-  end
-  defrule(:DIGIT) do
-    range(48, 57)
-  end
-  defrule(:DQUOTE) do
-    literal('"')
-  end
-  defrule(:HEXDIG) do
-    alternate([parse(:DIGIT), literal('A'), literal('B'), literal('C'), literal('D'), literal('E'), literal('F')])
-  end
-  defrule(:HTAB) do
-    literal('\t')
-  end
-  defrule(:LF) do
-    literal('\n')
-  end
-  defrule(:LWSP) do
-    repeat(0, :infinity, alternate([parse(:WSP), concatenate([parse(:CRLF), parse(:WSP)])]))
-  end
-  defrule(:OCTET) do
-    range(0, 255)
-  end
-  defrule(:SP) do
-    literal(' ')
-  end
-  defrule(:VCHAR) do
-    range(33, 126)
-  end
-  defrule(:WSP) do
-    alternate([parse(:SP), parse(:HTAB)])
-  end
   defrule(:rulelist) do
     repeat(1, :infinity, alternate([parse(:rule), concatenate([repeat(0, :infinity, parse(:"c-wsp")), parse(:"c-nl")])]))
   end
@@ -116,5 +68,8 @@ defmodule(Abnf.Rfc5234) do
   end
   defrule(:"prose-val") do
     concatenate([literal('<'), repeat(0, :infinity, alternate([range(32, 61), range(63, 126)])), literal('>')])
+  end
+  def(parse(rule)) do
+    Abnf.Core.parse(rule)
   end
 end

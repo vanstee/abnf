@@ -20,10 +20,9 @@ defmodule Abnf.Mixfile do
   end
 
   defp aliases do
-    ["generate", "abnf.generate",
+    ["generate": "abnf.generate",
      "generate.core": &generate_core/1,
-     "generate.rfc5234": &generate_rfc5234/1,
-     "generate.all": ["generate.core", "generate.rfc5234"]]
+     "generate.rfc5234": &generate_rfc5234/1]
   end
 
   defp generate_core(_) do
