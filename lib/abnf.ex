@@ -3,9 +3,14 @@ defmodule ABNF do
   alias ABNF.Parser
 
   def load!(path) do
+    module = path
+    |> Path.basename(".abnf")
+    |> String.capitalize
+    |> String.to_atom
+
     path
     |> File.read!
     |> Parser.parse
-    |> Generator.generate
+    |> Generator.generate(module)
   end
 end

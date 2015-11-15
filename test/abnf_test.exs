@@ -53,6 +53,19 @@ defmodule ABNFTest do
   end
 
   test "parsing and generating rfc5234" do
-    assert :ok = Macro.validate(ABNF.load!("priv/rfc5234.abnf"))
+    module = ABNF.load!("priv/rfc5234.abnf")
+
+    expected_rulelist = """
+    defrule(:DQUOTE) do
+      literal('"')
+    end
+    """
+    |> String.rstrip
+
+    actual_rulelist = module.parse(:rulelist, "DQUOTE = %x22\r\n")
+    |> Generator.generate
+    |> Macro.to_string
+
+    assert expected_rulelist == actual_rulelist
   end
 end

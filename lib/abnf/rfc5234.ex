@@ -204,7 +204,7 @@ defmodule ABNF.RFC5234 do
           repeat(1, :infinity,
             concatenate([
               literal('.'),
-              parse(:bit)
+              repeat(1, :infinity, parse(:bit))
             ])
           ),
           concatenate([
@@ -225,7 +225,7 @@ defmodule ABNF.RFC5234 do
           repeat(1, :infinity,
             concatenate([
               literal('.'),
-              parse(:digit)
+              repeat(1, :infinity, parse(:digit))
             ])
           ),
           concatenate([
@@ -246,7 +246,7 @@ defmodule ABNF.RFC5234 do
           repeat(1, :infinity,
             concatenate([
               literal('.'),
-              parse(:hexdig)
+              repeat(1, :infinity, parse(:hexdig))
             ])
           ),
           concatenate([

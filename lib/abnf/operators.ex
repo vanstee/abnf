@@ -104,11 +104,11 @@ defmodule ABNF.Operators do
     end
   end
 
-  def range(min, max, [head|_]) when head >= min and head <= max do
+  defp range(min, max, [head|_]) when head >= min and head <= max do
     [{:literal, to_string([head]), []}]
   end
 
-  def range(_min, _max, _string) do
+  defp range(_min, _max, _string) do
     :error
   end
 

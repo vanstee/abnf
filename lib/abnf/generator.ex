@@ -1,4 +1,26 @@
 defmodule ABNF.Generator do
+  import ABNF.Operators
+
+  def generate([{:rulelist, _, _} = rulelist], module) do
+    contents = generate(rulelist)
+
+    defmodule module do
+      def parse(rule, input) when is_binary(input) do
+        parse(rule, String.to_char_list(input))
+      end
+
+      def parse(rule, input) do
+        parse(rule).(input)
+      end
+
+      Module.eval_quoted(__MODULE__, contents, [], [functions: [{ABNF.Operators,
+             [advance: 2, alternate: 1, concatenate: 1, literal: 1, literal: 2,
+                   preview: 1, range: 2, repeat: 3, string_subtract: 2]}]])
+    end
+
+    module
+  end
+
   def generate({:rulelist, _preview, children}) do
     rules = children
     |> Enum.filter(&match?({:rule, _, _}, &1))
@@ -75,10 +97,39 @@ defmodule ABNF.Generator do
 
   def generate({:repetition, _preview, children}) do
     case children do
-      [{:repeat, _, _}, element] ->
-        # TODO: Use repeat min and max values
-        quote do
-          repeat(0, :infinity, unquote(generate(element)))
+      [repeat, element] ->
+        case repeat do
+          {:repeat, _, []} ->
+            quote do
+              repeat(0, :infinity, unquote(generate(element)))
+            end
+          {:repeat, _, children} ->
+            index = Enum.find_index(children, &match?({:literal, "*", _}, &1))
+            {min, [_|max]} = Enum.split(children, index)
+
+            min = case min do
+              [] ->
+                0
+              _ ->
+                min
+                |> Enum.map(fn {_, preview, _} -> preview end)
+                |> Enum.join
+                |> String.to_integer(16)
+            end
+
+            max = case max do
+              [] ->
+                :infinity
+              _ ->
+                max
+                |> Enum.map(fn {_, preview, _} -> preview end)
+                |> Enum.join
+                |> String.to_integer(16)
+            end
+
+            quote do
+              repeat(unquote(min), unquote(max), unquote(generate(element)))
+            end
         end
       [element] ->
         generate(element)
@@ -121,10 +172,7 @@ defmodule ABNF.Generator do
 
   def generate({:"num-val", _preview, children}) do
     [_, hex_val] = children
-
-    quote do
-      literal(unquote(generate(hex_val)))
-    end
+    generate(hex_val)
   end
 
   def generate({:"hex-val", _preview, children}) do
@@ -146,7 +194,7 @@ defmodule ABNF.Generator do
         |> String.to_integer(16)
 
         quote do
-          range([unquote([min]), unquote([max])])
+          range(unquote(min), unquote(max))
         end
       true ->
         integer = digits
@@ -155,7 +203,7 @@ defmodule ABNF.Generator do
         |> String.to_integer(16)
 
         quote do
-          [unquote(integer)]
+          literal([unquote(integer)])
         end
     end
   end
