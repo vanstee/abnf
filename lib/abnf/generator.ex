@@ -1,10 +1,12 @@
 defmodule ABNF.Generator do
-  import ABNF.Operators
-
   def generate([{:rulelist, _, _} = rulelist], module) do
     contents = generate(rulelist)
 
     defmodule module do
+      # Import is lexical and eval is not, so the compiler can't see that we're
+      # using macros and functions from the imported module below.
+      import ABNF.Operators, warn: false
+
       def parse(rule, input) when is_binary(input) do
         parse(rule, String.to_char_list(input))
       end
@@ -13,9 +15,7 @@ defmodule ABNF.Generator do
         parse(rule).(input)
       end
 
-      Module.eval_quoted(__MODULE__, contents, [], [functions: [{ABNF.Operators,
-             [advance: 2, alternate: 1, concatenate: 1, literal: 1, literal: 2,
-                   preview: 1, range: 2, repeat: 3, string_subtract: 2]}]])
+      Module.eval_quoted(__MODULE__, contents, [], __ENV__)
     end
 
     module
