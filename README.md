@@ -1,6 +1,41 @@
 # Abnf
 
-**TODO: Add description**
+## Example
+
+```elixir
+iex(1)> parser = Abnf.load("priv/rfc5234.abnf")
+Rfc5234
+iex(2)> parser.parse(:rule, "DQUOTE = %x22\r\n")
+[{:rule, "DQUOTE = %x22\r\n",
+  [{:rulename, "DQUOTE",
+    [{:ALPHA, "D", []}, {:ALPHA, "Q", []}, {:ALPHA, "U", []}, {:ALPHA, "O", []},
+     {:ALPHA, "T", []}, {:ALPHA, "E", []}]},
+   {:"defined-as", " = ",
+    [{:"c-wsp", " ", [{:WSP, " ", [{:SP, " ", []}]}]}, {:literal, "=", []},
+     {:"c-wsp", " ", [{:WSP, " ", [{:SP, " ", []}]}]}]},
+   {:elements, "%x22",
+    [{:alternation, "%x22",
+      [{:concatenation, "%x22",
+        [{:repetition, "%x22",
+          [{:element, "%x22",
+            [{:"num-val", "%x22",
+              [{:literal, "%", []},
+               {:"hex-val", "x22",
+                [{:literal, "x", []}, {:HEXDIG, "2", [{:DIGIT, "2", []}]},
+                 {:HEXDIG, "2", [{:DIGIT, "2", []}]}]}]}]}]}]}]}]},
+   {:"c-nl", "\r\n", [{:CRLF, "\r\n", [{:CR, "\r", []}, {:LF, "\n", []}]}]}]}]
+```
+
+## TODO
+
+- [x] Build minimal parser
+- [x] Build minimal generator
+- [x] Use self-hosted parser
+- [ ] Parse rfc2822
+- [ ] Improve test coverage
+- [ ] Clean up generator
+- [ ] Log error messages during parsing
+- [ ] Improve UX of parsing for specific rules
 
 ## Installation
 
