@@ -33,7 +33,7 @@ iex(2)> parser.parse(:rule, "DQUOTE = %x22\r\n")
 - [x] Build minimal parser
 - [x] Build minimal generator
 - [x] Use self-hosted parser
-- [ ] Parse rfc2822
+- [x] Parse rfc2822
 - [ ] Improve test coverage
 - [ ] Clean up generator
 - [ ] Log error messages during parsing

@@ -111,8 +111,16 @@ defmodule Abnf.Generator do
               repeat(0, :infinity, unquote(generate(element)))
             end
           {:repeat, _, children} ->
-            index = Enum.find_index(children, &match?({:literal, "*", _}, &1))
-            {min, [_|max]} = Enum.split(children, index)
+            {min, max} = case Enum.chunk_by(children, &match?({:literal, "*", _}, &1)) do
+              [min] ->
+                {min, []}
+              [min, [{:literal, "*", []}]] ->
+                {min, []}
+              [[{:literal, "*", []}], max] ->
+                {[], max}
+              [min, [_], max] ->
+                {min, max}
+            end
 
             min = case min do
               [] ->
