@@ -1,5 +1,5 @@
 defmodule Abnf.GeneratorTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   alias Abnf.Generator
 
   test "generating a dquote" do

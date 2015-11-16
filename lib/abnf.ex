@@ -3,9 +3,12 @@ defmodule Abnf do
   alias Abnf.Parser
 
   def load(path) do
-    path
+    {module, []} = path
     |> compile
     |> Code.eval_quoted
+
+    {:module, module_name, _, _} = module
+    module_name
   end
 
   def compile(path) do

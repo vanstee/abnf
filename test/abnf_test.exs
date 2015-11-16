@@ -57,7 +57,7 @@ defmodule AbnfTest do
   end
 
   test "parsing and generating rfc5234" do
-    module = Abnf.load!("priv/rfc5234.abnf")
+    module = Abnf.load("priv/rfc5234.abnf")
 
     expected_rulelist = """
     defrule(:DQUOTE) do

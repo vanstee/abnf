@@ -1,5 +1,5 @@
 defmodule Abnf.ParserTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   alias Abnf.Rfc5234
 
   test "parsing a dquote" do
