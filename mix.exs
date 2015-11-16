@@ -8,7 +8,8 @@ defmodule Abnf.Mixfile do
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      deps: deps,
-     aliases: aliases]
+     aliases: aliases,
+     package: package]
   end
 
   def application do
@@ -17,6 +18,13 @@ defmodule Abnf.Mixfile do
 
   defp deps do
     []
+  end
+
+  defp package do
+    [description: "ABNF parser for Elixir",
+     licenses: ["MIT"],
+     files: ["lib", "priv", "mix.exs", "README.md"],
+     links: %{"GitHub" => "https://github.com/vanstee/abnf"}]
   end
 
   defp aliases do
