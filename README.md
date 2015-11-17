@@ -10,11 +10,14 @@ Rfc5234
 iex(2)> parser.parse(:rule, "DQUOTE = %x22\r\n")
 [{:rule, "DQUOTE = %x22\r\n",
   [{:rulename, "DQUOTE",
-    [{:ALPHA, "D", []}, {:ALPHA, "Q", []}, {:ALPHA, "U", []}, {:ALPHA, "O", []},
-     {:ALPHA, "T", []}, {:ALPHA, "E", []}]},
+    [{:ALPHA, "D", [{:literal, "D", []}]}, {:ALPHA, "Q", [{:literal, "Q", []}]},
+     {:ALPHA, "U", [{:literal, "U", []}]}, {:ALPHA, "O", [{:literal, "O", []}]},
+     {:ALPHA, "T", [{:literal, "T", []}]},
+     {:ALPHA, "E", [{:literal, "E", []}]}]},
    {:"defined-as", " = ",
-    [{:"c-wsp", " ", [{:WSP, " ", [{:SP, " ", []}]}]}, {:literal, "=", []},
-     {:"c-wsp", " ", [{:WSP, " ", [{:SP, " ", []}]}]}]},
+    [{:"c-wsp", " ", [{:WSP, " ", [{:SP, " ", [{:literal, " ", []}]}]}]},
+     {:literal, "=", []},
+     {:"c-wsp", " ", [{:WSP, " ", [{:SP, " ", [{:literal, " ", []}]}]}]}]},
    {:elements, "%x22",
     [{:alternation, "%x22",
       [{:concatenation, "%x22",
@@ -23,9 +26,14 @@ iex(2)> parser.parse(:rule, "DQUOTE = %x22\r\n")
             [{:"num-val", "%x22",
               [{:literal, "%", []},
                {:"hex-val", "x22",
-                [{:literal, "x", []}, {:HEXDIG, "2", [{:DIGIT, "2", []}]},
-                 {:HEXDIG, "2", [{:DIGIT, "2", []}]}]}]}]}]}]}]}]},
-   {:"c-nl", "\r\n", [{:CRLF, "\r\n", [{:CR, "\r", []}, {:LF, "\n", []}]}]}]}]
+                [{:literal, "x", []},
+                 {:HEXDIG, "2", [{:DIGIT, "2", [{:literal, "2", []}]}]},
+                 {:HEXDIG, "2",
+                  [{:DIGIT, "2", [{:literal, "2", []}]}]}]}]}]}]}]}]}]},
+   {:"c-nl", "\r\n",
+    [{:CRLF, "\r\n",
+      [{:CR, "\r", [{:literal, "\r", []}]},
+       {:LF, "\n", [{:literal, "\n", []}]}]}]}]}]
 ```
 
 ## TODO
@@ -34,8 +42,8 @@ iex(2)> parser.parse(:rule, "DQUOTE = %x22\r\n")
 - [x] Build minimal generator
 - [x] Use self-hosted parser
 - [x] Parse rfc2822
+- [x] Clean up generator
 - [ ] Improve test coverage
-- [ ] Clean up generator
 - [ ] Log error messages during parsing
 - [ ] Improve UX of parsing for specific rules
 
