@@ -3,38 +3,38 @@ defmodule Abnf.ParserTest do
   alias Abnf.Rfc5234
 
   test "parsing a dquote" do
-    assert [{:DQUOTE, "\"", []}] = Rfc5234.parse(:DQUOTE, "\"")
+    assert [{:DQUOTE, "\"", [{:literal, "\"", []}]}] = Rfc5234.parse(:DQUOTE, "\"")
   end
 
   test "parsing a bit" do
-    assert [{:BIT, "0", []}] = Rfc5234.parse(:BIT, "0")
-    assert [{:BIT, "1", []}] = Rfc5234.parse(:BIT, "1")
+    assert [{:BIT, "0", [{:literal, "0", []}]}] = Rfc5234.parse(:BIT, "0")
+    assert [{:BIT, "1", [{:literal, "1", []}]}] = Rfc5234.parse(:BIT, "1")
   end
 
   test "parsing a crlf" do
     assert [{:CRLF, "\r\n", [
-      {:CR, "\r", []},
-      {:LF, "\n", []},
+      {:CR, "\r", [{:literal, "\r", []}]},
+      {:LF, "\n", [{:literal, "\n", []}]},
     ]}] = Rfc5234.parse(:CRLF, "\r\n")
   end
 
   test "parsing a repeat" do
     assert [{:repeat, "1*23", [
-      {:DIGIT, "1", []},
+      {:DIGIT, "1", [{:literal, "1", []}]},
       {:literal, "*", []},
-      {:DIGIT, "2", []},
-      {:DIGIT, "3", []}
+      {:DIGIT, "2", [{:literal, "2", []}]},
+      {:DIGIT, "3", [{:literal, "3", []}]}
     ]}] = Rfc5234.parse(:repeat, "1*23")
   end
 
   test "parsing a rulename" do
     assert [{:rulename, "DQUOTE", [
-      {:ALPHA, "D", []},
-      {:ALPHA, "Q", []},
-      {:ALPHA, "U", []},
-      {:ALPHA, "O", []},
-      {:ALPHA, "T", []},
-      {:ALPHA, "E", []}
+      {:ALPHA, "D", [{:literal, "D", []}]},
+      {:ALPHA, "Q", [{:literal, "Q", []}]},
+      {:ALPHA, "U", [{:literal, "U", []}]},
+      {:ALPHA, "O", [{:literal, "O", []}]},
+      {:ALPHA, "T", [{:literal, "T", []}]},
+      {:ALPHA, "E", [{:literal, "E", []}]}
     ]}] = Rfc5234.parse(:rulename, "DQUOTE")
   end
 

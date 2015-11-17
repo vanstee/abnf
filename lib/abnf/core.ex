@@ -1,5 +1,5 @@
 defmodule(Abnf.Core) do
-  import(Abnf.Operators, warn: false)
+  import(Abnf.Operators)
   def(parse(rule, input) when is_binary(input)) do
     parse(rule, String.to_char_list(input))
   end
@@ -54,5 +54,4 @@ defmodule(Abnf.Core) do
   defrule(:WSP) do
     alternate([parse(:SP), parse(:HTAB)])
   end
-  nil
 end

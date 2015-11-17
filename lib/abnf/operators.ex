@@ -6,8 +6,6 @@ defmodule Abnf.Operators do
           case unquote(block).(input) do
             :error ->
               :error
-            [{:literal, preview, []}] ->
-              [{unquote(name), preview, []}]
             children ->
               [{unquote(name), preview(children), children}]
           end

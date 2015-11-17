@@ -1,51 +1,31 @@
 defmodule Abnf.Generator do
-  def generate([{:rulelist, _, _} = rulelist], module) do
-    forward_to_core = case module do
-      Abnf.Core ->
-        quote do: nil
-      _ ->
-        quote do
-          def parse(rule) do
-            Abnf.Core.parse(rule)
-          end
-        end
-    end
+  def generate([{:rulelist, _preview, _children} = rulelist], module) do
+    parsers = [parse_helpers, generate(rulelist), forwarder(module)]
+    |> Enum.reject(&is_nil/1)
+    |> List.flatten
 
     quote do
       defmodule unquote(module) do
-        import Abnf.Operators, warn: false
+        import Abnf.Operators
 
-        def parse(rule, input) when is_binary(input) do
-          parse(rule, String.to_char_list(input))
-        end
-
-        def parse(rule, input) do
-          parse(rule).(input)
-        end
-
-        unquote_splicing(generate(rulelist))
-
-        unquote(forward_to_core)
+        unquote_splicing(parsers)
       end
     end
   end
 
   def generate({:rulelist, _preview, children}) do
-    rules = children
+    children
     |> Enum.filter(&match?({:rule, _, _}, &1))
     |> Enum.map(&generate/1)
-
-    rules
   end
 
-  def generate({:rule, _preview, children}) do
-    [{:rulename, rulename, _}, _, elements, _] = children
-
+  def generate({:rule, _preview, [{_, rulename, _}, _, elements, _]}) do
     rulename = String.to_atom(rulename)
+    elements = generate(elements)
 
     quote do
       defrule unquote(rulename) do
-        unquote(generate(elements))
+        unquote(elements)
       end
     end
   end
@@ -58,126 +38,85 @@ defmodule Abnf.Generator do
     end
   end
 
-  def generate({:elements, _preview, children}) do
-    [alternation|_] = children
-
-    quote do
-      unquote(generate(alternation))
-    end
+  def generate({:elements, _preview, [alternation|_]}) do
+    generate(alternation)
   end
 
-  def generate({:alternation, _preview, [child]}) do
-    quote do
-      unquote(generate(child))
-    end
+  def generate({:alternation, _preview, [concatenation]}) do
+    generate(concatenation)
   end
 
   def generate({:alternation, _preview, children}) do
     children = children
-    |> Enum.filter(&(elem(&1, 0) == :concatenation))
+    |> Enum.filter(&match?({:concatenation, _, _}, &1))
     |> Enum.map(&generate/1)
 
     quote do
-      alternate([
-        unquote_splicing(children)
-      ])
+      alternate([unquote_splicing(children)])
     end
   end
 
-  def generate({:concatenation, _preview, [child]}) do
-    quote do
-      unquote(generate(child))
-    end
+  def generate({:concatenation, _preview, [repetition]}) do
+    generate(repetition)
   end
 
   def generate({:concatenation, _preview, children}) do
     children = children
-    |> Enum.filter(&(elem(&1, 0) == :repetition))
+    |> Enum.filter(&match?({:repetition, _, _}, &1))
     |> Enum.map(&generate/1)
 
     quote do
-      concatenate([
-        unquote_splicing(children)
-      ])
+      concatenate([unquote_splicing(children)])
     end
   end
 
-  def generate({:repetition, _preview, children}) do
-    case children do
-      [repeat, element] ->
-        case repeat do
-          {:repeat, _, []} ->
-            quote do
-              repeat(0, :infinity, unquote(generate(element)))
-            end
-          {:repeat, _, children} ->
-            {min, max} = case Enum.chunk_by(children, &match?({:literal, "*", _}, &1)) do
-              [min] ->
-                {min, []}
-              [min, [{:literal, "*", []}]] ->
-                {min, []}
-              [[{:literal, "*", []}], max] ->
-                {[], max}
-              [min, [_], max] ->
-                {min, max}
-            end
+  def generate({:repetition, _preview, [element]}) do
+    generate(element)
+  end
 
-            min = case min do
-              [] ->
-                0
-              _ ->
-                min
-                |> Enum.map(fn {_, preview, _} -> preview end)
-                |> Enum.join
-                |> String.to_integer(16)
-            end
+  def generate({:repetition, _, [{:repeat, _, children}, element]}) do
+    {min, max} = case Enum.chunk_by(children, &match?({:literal, "*", []}, &1)) do
+      [[{:literal, "*", []}]] ->
+        {0, :infinity}
+      [min] ->
+        {generate_digits(min), :infinity}
+      [min, [{:literal, "*", []}]] ->
+        {generate_digits(min), :infinity}
+      [[{:literal, "*", []}], max] ->
+        {0, max}
+      [min, [{:literal, "*", []}], max] ->
+        {min, max}
+    end
 
-            max = case max do
-              [] ->
-                :infinity
-              _ ->
-                max
-                |> Enum.map(fn {_, preview, _} -> preview end)
-                |> Enum.join
-                |> String.to_integer(16)
-            end
+    element = generate(element)
 
-            quote do
-              repeat(unquote(min), unquote(max), unquote(generate(element)))
-            end
-        end
-      [element] ->
-        generate(element)
+    quote do
+      repeat(unquote(min), unquote(max), unquote(element))
     end
   end
 
-  def generate({:element, _preview, children}) do
-    generate(children)
+  def generate({:element, _preview, [child]}) do
+    generate(child)
   end
 
   def generate({:group, _preview, children}) do
-    [alternation] = children
-    |> Enum.filter(&(elem(&1, 0) == :alternation))
-    |> Enum.map(&generate/1)
+    alternation = Enum.find(children, &match?({:alternation, _, _}, &1))
 
-    alternation
+    generate(alternation)
   end
 
   def generate({:option, _preview, children}) do
-    [alternation] = children
-    |> Enum.filter(&(elem(&1, 0) == :alternation))
-    |> Enum.map(&generate/1)
+    alternation = Enum.find(children, &match?({:alternation, _, _}, &1))
 
     quote do
-      repeat(0, 1, unquote(alternation))
+      repeat(0, 1, unquote(generate(alternation)))
     end
   end
 
   def generate({:"char-val", _preview, children}) do
     char_val = children
-    |> Enum.map(&generate/1)
-    |> Enum.join
-    |> String.strip(?")
+    |> Enum.filter(&match?({:literal, _, []}, &1))
+    |> Enum.map_join(&elem(&1, 1))
     |> String.to_char_list
 
     quote do
@@ -185,98 +124,67 @@ defmodule Abnf.Generator do
     end
   end
 
-  def generate({:"num-val", _preview, children}) do
-    [_, hex_val] = children
-    generate(hex_val)
+  def generate({:"num-val", _preview, [_, child]}) do
+    generate(child)
   end
 
-  def generate({:"hex-val", _preview, children}) do
-    [_|digits] = children
-
-    cond do
-      Enum.any?(digits, &match?({:literal, "-", _}, &1)) ->
-        index = Enum.find_index(digits, &match?({:literal, "-", _}, &1))
-        {min, [_|max]} = Enum.split(digits, index)
-
-        min = min
-        |> Enum.map(fn {_, preview, _} -> preview end)
-        |> Enum.join
-        |> String.to_integer(16)
-
-        max = max
-        |> Enum.map(fn {_, preview, _} -> preview end)
-        |> Enum.join
-        |> String.to_integer(16)
-
-        quote do
-          range(unquote(min), unquote(max))
-        end
-      true ->
-        integer = digits
-        |> Enum.map(fn {_, preview, _} -> preview end)
-        |> Enum.join
-        |> String.to_integer(16)
+  def generate({rule, _preview, [_|children]}) when rule in [:"bin-val", :"dec-val", :"hex-val"] do
+    case Enum.chunk_by(children, &match?({:literal, "-", []}, &1)) do
+      [digits] ->
+        integer = generate_digits(digits, rule)
 
         quote do
           literal([unquote(integer)])
         end
-    end
-  end
-
-  def generate({:"dec-val", _preview, children}) do
-    [_|digits] = children
-
-    cond do
-      Enum.any?(digits, &match?({:literal, "-", _}, &1)) ->
-        index = Enum.find_index(digits, &match?({:literal, "-", _}, &1))
-        {min, [_|max]} = Enum.split(digits, index)
-
-        min = min
-        |> Enum.map(fn {_, preview, _} -> preview end)
-        |> Enum.join
-        |> String.to_integer
-
-        max = max
-        |> Enum.map(fn {_, preview, _} -> preview end)
-        |> Enum.join
-        |> String.to_integer
+      [min, _, max] ->
+        min = generate_digits(min, rule)
+        max = generate_digits(max, rule)
 
         quote do
           range(unquote(min), unquote(max))
         end
-      true ->
-        integer = digits
-        |> Enum.map(fn {_, preview, _} -> preview end)
-        |> Enum.join
-        |> String.to_integer(16)
+    end
+  end
 
+  defp parse_helpers do
+    [quote do
+       def parse(rule, input) when is_binary(input) do
+         parse(rule, String.to_char_list(input))
+       end
+     end,
+     quote do
+       def parse(rule, input) do
+         parse(rule).(input)
+       end
+     end]
+  end
+
+  defp forwarder(module) do
+    case module do
+      Abnf.Core ->
+        nil
+      _ ->
         quote do
-          literal([unquote(integer)])
+          def parse(rule) do
+            Abnf.Core.parse(rule)
+          end
         end
     end
   end
 
-  def generate({:"c-nl", _preview, _children}) do
-    nil
+  defp generate_digits(digits) do
+    generate_digits(digits, :"dec-val")
   end
 
-  def generate({:"c-wsp", _preview, _children}) do
-    nil
-  end
+  defp generate_digits(digits, type) do
+    base = case type do
+      :"bin-val" ->  2
+      :"dec-val" -> 10
+      :"hex-val" -> 16
+    end
 
-  def generate({:CRLF, preview, _children}) do
-    preview
-  end
-
-  def generate({:repeat, preview, _children}) do
-    preview
-  end
-
-  def generate({_rule, preview, []}) do
-    preview
-  end
-
-  def generate([element]) do
-    generate(element)
+    digits
+    |> Enum.map_join(&elem(&1, 1))
+    |> String.to_integer(base)
   end
 end
